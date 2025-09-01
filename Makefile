@@ -3,8 +3,8 @@ LOG_FILE = /tmp/jekyll$(PORT).log
 PID_FILE = /tmp/jekyll$(PORT).pid
 TAIL_PID_FILE = /tmp/jekyll_tail$(PORT).pid
 
-SHELL = /bin/bash -c
-.SHELLFLAGS = -e
+SHELL = /bin/bash
+.SHELLFLAGS = -eu -o pipefail -c
 
 DESTINATION_DIRECTORY = _posts
 NOTEBOOK_DIR = _notebooks
@@ -15,15 +15,15 @@ default: serve-current
 # ---------- Notebook conversion ----------
 convert:
 	@echo "Converting notebooks to Markdown..."
-	@python3 -c "from scripts.convert_notebooks import convert_notebooks; convert_notebooks()"
+	@python3 -c "from scripts.convert_notebooks import convert_notebooks; convert_notebooks()" || true
 
 # ---------- Serve / Stop ----------
 serve-current: stop convert
 	@echo "Starting Jekyll server..."
-	@nohup bash -c 'bundle install && bundle exec jekyll serve -H 127.0.0.1 -P $(PORT) > $(LOG_FILE) 2>&1 &' \
-		; echo $$! > $(PID_FILE)
+	@nohup bash -c "bundle install && bundle exec jekyll serve -H 127.0.0.1 -P $(PORT)" > $(LOG_FILE) 2>&1 & \
+		echo $$! > $(PID_FILE)
 	@echo "Starting logging..."
-	@nohup bash -c 'tail -f $(LOG_FILE)' > /dev/null 2>&1 & echo $$! > $(TAIL_PID_FILE)
+	@nohup tail -f $(LOG_FILE) > /dev/null 2>&1 & echo $$! > $(TAIL_PID_FILE)
 	@echo "Server PID saved to $(PID_FILE)"
 	@echo "Logging PID saved to $(TAIL_PID_FILE)"
 	@until grep -q "Server address:" $(LOG_FILE); do sleep 1; done
@@ -33,7 +33,7 @@ serve-current: stop convert
 stop:
 	@echo "Stopping Jekyll server..."
 	@if [ -f $(PID_FILE) ]; then \
-		kill $$(cat $(PID_FILE)) >/dev/null 2>&1 || true; \
+		kill "$$(cat $(PID_FILE))" >/dev/null 2>&1 || true; \
 		rm -f $(PID_FILE); \
 		echo "Server stopped"; \
 	else \
@@ -41,7 +41,7 @@ stop:
 	fi
 	@echo "Stopping logging..."
 	@if [ -f $(TAIL_PID_FILE) ]; then \
-		kill $$(cat $(TAIL_PID_FILE)) >/dev/null 2>&1 || true; \
+		kill "$$(cat $(TAIL_PID_FILE))" >/dev/null 2>&1 || true; \
 		rm -f $(TAIL_PID_FILE); \
 		echo "Logging stopped"; \
 	else \
