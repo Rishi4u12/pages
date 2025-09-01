@@ -104,7 +104,70 @@ use-yat:
 	@cp _themes/yat/page.html _layouts/page.html
 	@cp _themes/yat/post.html _layouts/post.html
 
-# ---------- Serve/Build Shortcuts ----------
+use-hydejack:
+	@cp _themes/hydejack/_config.yml _config.yml
+	@cp _themes/hydejack/Gemfile Gemfile
+	@cp _themes/hydejack/opencs.html _layouts/opencs.html
+	@cp _themes/hydejack/page.html _layouts/page.html
+	@cp _themes/hydejack/post.html _layouts/post.html
+
+serve-hydejack: use-hydejack clean
+	@make serve-current
+
+
+build-tactile: use-tactile build-current
+
+# Serve with selected theme
+serve-minima: use-minima clean
+	@make serve-current
+
+serve-text: use-text clean
+	@make serve-current
+
+serve-cayman: use-cayman clean
+	@make serve-current
+
+serve-so-simple: use-so-simple clean
+	@make serve-current
+
+serve-yat: use-yat clean
+	@make serve-current
+
+# General serve target (uses whatever is in _config.yml/Gemfile)
+serve-current: stop convert
+	@echo "Starting server with current config/Gemfile..."
+	@@nohup bundle install && bundle exec jekyll serve -H 127.0.0.1 -P $(PORT) > $(LOG_FILE) 2>&1 & \
+		PID=$$!; \
+		echo "Server PID: $$PID"
+	@@until [ -f $(LOG_FILE) ]; do sleep 1; done
+	@for ((COUNTER = 0; ; COUNTER++)); do \
+		if grep -q "Server address:" $(LOG_FILE); then \
+			echo "Server started in $$COUNTER seconds"; \
+			grep "Server address:" $(LOG_FILE); \
+			break; \
+		fi; \
+		if [ $$COUNTER -eq 120 ]; then \
+			echo "Server timed out after $$COUNTER seconds."; \
+			echo "Review errors from $(LOG_FILE)."; \
+			cat $(LOG_FILE); \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done
+
+# Build with selected theme
+build-minima: use-minima build-current
+build-text: use-text build-current
+build-cayman: use-cayman build-current
+build-so-simple: use-so-simple build-current
+build-yat: use-yat build-current
+
+build-current: clean
+	@bundle install
+	@bundle exec jekyll clean
+	@bundle exec jekyll build
+
+# General serve/build for whatever is current
 serve: serve-current
 build: build-current
 refresh: stop clean serve
