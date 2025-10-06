@@ -1,40 +1,72 @@
 PORT ?= 4500
 LOG_FILE = /tmp/jekyll$(PORT).log
+PID_FILE = /tmp/jekyll$(PORT).pid
+TAIL_PID_FILE = /tmp/jekyll_tail$(PORT).pid
 
-SHELL = /bin/bash -c
-.SHELLFLAGS = -e
+SHELL = /bin/bash
+.SHELLFLAGS = -eu -o pipefail -c
 
-NOTEBOOK_FILES := $(shell find _notebooks -name '*.ipynb')
 DESTINATION_DIRECTORY = _posts
-MARKDOWN_FILES := $(patsubst _notebooks/%.ipynb,$(DESTINATION_DIRECTORY)/%_IPYNB_2_.md,$(NOTEBOOK_FILES))
+NOTEBOOK_DIR = _notebooks
 
+# ---------- Default ----------
 default: serve-current
-	@echo "Terminal logging starting, watching server for regeneration..."
-	@(tail -f $(LOG_FILE) | awk '/Server address:/ { serverReady=1 } \
-	serverReady && /^ *Regenerating:/ { regenerate=1 } \
-	regenerate { \
-		if (/^[[:blank:]]*$$/) { regenerate=0 } \
-		else { \
-			print; \
-			if ($$0 ~ /_notebooks\/.*\.ipynb/) { system("make convert &") } \
-		} \
-	}') 2>/dev/null &
-	@for ((COUNTER = 0; ; COUNTER++)); do \
-		if grep -q "Server address:" $(LOG_FILE); then \
-			echo "Server started in $$COUNTER seconds"; \
-			break; \
-		fi; \
-		if [ $$COUNTER -eq 120 ]; then \
-			echo "Server timed out after $$COUNTER seconds."; \
-			echo "Review errors from $(LOG_FILE)."; \
-			cat $(LOG_FILE); \
-			exit 1; \
-		fi; \
-		sleep 1; \
-	done
-	@sed '$$d' $(LOG_FILE)
 
-# Theme switching: copy config and Gemfile for the theme
+# ---------- Notebook conversion ----------
+convert:
+	@echo "Converting notebooks to Markdown..."
+	@python3 -c "from scripts.convert_notebooks import convert_notebooks; convert_notebooks()" || true
+
+# ---------- Serve / Stop ----------
+serve-current: stop convert
+	@echo "Starting Jekyll server..."
+	@nohup bash -c "bundle install && bundle exec jekyll serve -H 127.0.0.1 -P $(PORT)" > $(LOG_FILE) 2>&1 & \
+		echo $$! > $(PID_FILE)
+	@echo "Starting logging..."
+	@nohup tail -f $(LOG_FILE) > /dev/null 2>&1 & echo $$! > $(TAIL_PID_FILE)
+	@echo "Server PID saved to $(PID_FILE)"
+	@echo "Logging PID saved to $(TAIL_PID_FILE)"
+	@until grep -q "Server address:" $(LOG_FILE); do sleep 1; done
+	@echo "Server started:"
+	@grep "Server address:" $(LOG_FILE)
+
+stop:
+	@echo "Stopping Jekyll server..."
+	@if [ -f $(PID_FILE) ]; then \
+		kill "$$(cat $(PID_FILE))" >/dev/null 2>&1 || true; \
+		rm -f $(PID_FILE); \
+		echo "Server stopped"; \
+	else \
+		echo "No server PID file found"; \
+	fi
+	@echo "Stopping logging..."
+	@if [ -f $(TAIL_PID_FILE) ]; then \
+		kill "$$(cat $(TAIL_PID_FILE))" >/dev/null 2>&1 || true; \
+		rm -f $(TAIL_PID_FILE); \
+		echo "Logging stopped"; \
+	else \
+		echo "No logging PID file found"; \
+	fi
+	@rm -f $(LOG_FILE) || true
+
+# ---------- Build ----------
+build-current: clean
+	@bundle install
+	@bundle exec jekyll clean
+	@bundle exec jekyll build
+
+# ---------- Clean ----------
+clean: stop
+	@echo "Cleaning converted IPYNB files..."
+	@find $(DESTINATION_DIRECTORY) -type f -name '*_IPYNB_2_.md' -exec rm {} +
+	@echo "Removing empty directories in $(DESTINATION_DIRECTORY)..."
+	@while [ $$(find $(DESTINATION_DIRECTORY) -type d -empty | wc -l) -gt 0 ]; do \
+		find $(DESTINATION_DIRECTORY) -type d -empty -exec rmdir {} +; \
+	done
+	@echo "Removing _site directory..."
+	@rm -rf _site
+
+# ---------- Themes ----------
 use-minima:
 	@cp _themes/minima/_config.yml _config.yml
 	@cp _themes/minima/Gemfile Gemfile
@@ -138,6 +170,7 @@ build-current: clean
 # General serve/build for whatever is current
 serve: serve-current
 build: build-current
+<<<<<<< HEAD
 
 # Notebook conversion
 convert: $(MARKDOWN_FILES)
@@ -193,3 +226,7 @@ help:
 	@echo "  make reload         - Stop and restart server"
 	@echo "  make refresh        - Stop, clean, and restart server"
 	@echo "  make convert        - Convert notebooks to Markdown"
+=======
+refresh: stop clean serve
+reload: stop serve
+>>>>>>> 845266e8a878b3bdea7c0e3ebcf52cfbbc3d8fd7
