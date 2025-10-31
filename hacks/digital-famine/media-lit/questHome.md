@@ -17,7 +17,7 @@ lxdData:
       Description: "First line of defense from foreign invaders. To understand media literacy, you first need to become aware of it's subconcious effects"
       Categories: ["Certificate", "Integration", "Achievement"]
       Lessons: "/digital-famine/media-lit/submodule_1/"
-      Image: "/images/digital-famine/mediaawareness.png"
+  Image: "/images/digital-famine/planet-1.png"
       Alt: "Analytics Submodule 1"
     - Title: "Bias Detector"
       Genre: "Integration"
@@ -25,7 +25,7 @@ lxdData:
       Description: "Second line of defense from foreign invaders. The news you read can have underlying biases that you might not even be aware of."
       Categories: ["Certificate", "Integration", "Achievement"]
       Lessons: "/digital-famine/media-lit/submodule_2/"
-      Image: "/images/digital-famine/mediabias.png"
+  Image: "/images/digital-famine/planet-2.png"
       Alt: "Analytics Submodule 2"
     - Title: "Truth Scanner"
       Genre: "Integration"
@@ -33,7 +33,7 @@ lxdData:
       Description: "Third line of defense from foreign invaders. News headlines can seem believable, but are they really?"
       Categories: ["Certificate", "Integration", "Achievement"]
       Lessons: "/digital-famine/media-lit/submodule_3/"
-      Image: "/images/digital-famine/radar.png"
+  Image: "/images/digital-famine/planet-3.png"
       Alt: "Analytics Submodule 3"
     - Title: "Bias Sort"
       Genre: "Integration"
@@ -41,7 +41,7 @@ lxdData:
       Description: "Final line of defense from foreign invaders. Sort the headlines to practice understanding of bias and wording."
       Categories: ["Certificate", "Integration", "Achievement"]
       Lessons: "/digital-famine/media-lit/submodule_4/"
-      Image: "/images/digital-famine/sort.png"
+  Image: "/images/digital-famine/planet-4.png"
       Alt: "Analytics Submodule 4"
     - Title: "Vault"
       Genre: "Integration"
@@ -50,7 +50,7 @@ lxdData:
       Categories: ["Certificate", "Integration", "Achievement"]
       Video: "/digital-famine/media-lit/submodule_5-video"
       Lessons: "/digital-famine/media-lit/submodule_5/"
-      Image: "/images/digital-famine/congratulations.png"
+  Image: "/images/digital-famine/trophy.webp"
       Alt: "Analytics Submodule 5"
 ---
 {%- include tailwind/cs-portfolio-quest_info.html -%}
